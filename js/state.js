@@ -29,6 +29,9 @@ export function createInitialState() {
     critChanceLevel: 0,
     critDamageLevel: 0,
     agilityLevel: 0,
+    evasionLevel: 0,
+    defenseLevel: 0,
+    growthVersion: 2,
     coinLevel: 0,
     hpLevel: 0,
     tempGoldBonus: 0,
@@ -82,12 +85,12 @@ export function createInitialState() {
 }
 
 export function calcCost(levelKey) {
-  const table = { attackLevel: 15, speedLevel: 35, coinLevel: 50, hpLevel: 25, critChanceLevel: 50, critDamageLevel: 50, agilityLevel: 30 };
+  const table = { attackLevel: 15, speedLevel: 35, coinLevel: 50, hpLevel: 25, critChanceLevel: 50, critDamageLevel: 50, agilityLevel: 30, evasionLevel: 30, defenseLevel: 40 };
   return Math.floor(table[levelKey] * Math.pow(1.42, levelKey === 'attackLevel' ? 0 : 0));
 }
 
 export function getRealCost(levelKey, currentValue) {
-  const table = { attackLevel: 15, speedLevel: 35, coinLevel: 50, hpLevel: 25, critChanceLevel: 50, critDamageLevel: 50, agilityLevel: 30 };
+  const table = { attackLevel: 15, speedLevel: 35, coinLevel: 50, hpLevel: 25, critChanceLevel: 50, critDamageLevel: 50, agilityLevel: 30, evasionLevel: 30, defenseLevel: 40 };
   const level = Number(currentValue || 0);
   return Math.floor(table[levelKey] * Math.pow(1.42, level));
 }
@@ -117,7 +120,9 @@ export function getStatSnapshot(state) {
   maxHp += state.hpLevel * 15;
   attack += state.attackLevel * 3;
   speed = speed * Math.pow(1.08, state.speedLevel);
-  evade = Math.min(0.75, evade + (state.agilityLevel || 0) * 0.01);
+  evade = Math.min(0.75, evade + (state.evasionLevel || 0) * 0.01);
+  move += (state.agilityLevel || 0) * 3;
+  defense += (state.defenseLevel || 0) * 2;
   const critChance = Math.min(0.75, 0.05 + (state.critChanceLevel || 0) * 0.01);
   const critDamage = 1.5 + (state.critDamageLevel || 0) * 0.1;
   const goldBonus = 1 + state.coinLevel * 0.2;
@@ -145,6 +150,11 @@ export function loadState() {
     if (!raw) return createInitialState();
     const parsed = JSON.parse(raw);
     const state = { ...createInitialState(), ...parsed };
+    if (parsed.growthVersion !== 2) {
+      state.evasionLevel = parsed.evasionLevel ?? parsed.agilityLevel ?? 0;
+      state.agilityLevel = 0;
+      state.growthVersion = 2;
+    }
 
     if (!Number.isFinite(state.fieldSeconds) || state.fieldSeconds < 0) state.fieldSeconds = 0;
     if (!Array.isArray(state.lootChests)) state.lootChests = [];

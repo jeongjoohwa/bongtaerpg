@@ -66,3 +66,8 @@ export function rollAttackDamage(stats, roll = Math.random()) {
 export function evadesAttack(stats, roll = Math.random()) {
   return roll < stats.evade;
 }
+
+// Defense reduces every incoming attack proportionally, with a minimum of 1.
+export function calculateIncomingDamage(damage, defense = 0) {
+  return Math.max(1, Math.round(damage * 100 / (100 + Math.max(0, defense))));
+}

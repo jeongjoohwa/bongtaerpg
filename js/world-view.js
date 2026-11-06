@@ -144,6 +144,10 @@ export function drawActor(ctx, actor, { hero = false, job = 'warrior', color = '
     rect(ctx, '#b7ce8b', x - size + 3, y - size * 2, size, 5);
     rect(ctx, '#202e32', x - 7, y - size - 4, 4, 4);
     rect(ctx, '#202e32', x + 4, y - size - 4, 4, 4);
+    if (actor.attackAnim > 0) {
+      rect(ctx, '#ffd49a', x + size - 2, y - size - 4, 12, 6);
+      rect(ctx, '#f09a67', x + size + 8, y - size - 7, 3, 12);
+    }
     rect(ctx, '#28342f', x - 17, y + 7, 34, 4);
     rect(ctx, '#e7877c', x - 17, y + 7, Math.max(0, Math.round(34 * actor.hp / actor.maxHp)), 4);
   }

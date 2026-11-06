@@ -71,3 +71,36 @@ test('근접 공격 경계의 소수점 오차에도 피해가 들어가고 HP �
     assert.equal(hero.hp, 134);
   `);
 });
+
+test('움직이는 플레이어를 따라 공격 거리에 도착한 프레임에 즉시 공격한다', async () => {
+  const run = await runtime();
+  run(`
+    state = createInitialState(); state.job = 'warrior';
+    hero.x = 1000; hero.y = 1000; hero.hp = 150; hero.invuln = 0;
+    mobs = [{ x: 1032, y: 1000, range: 20, speed: 128, damage: 8, attackTimer: 0, flash: 0 }];
+    for (let i = 0; i < 40; i++) {
+      hero.x -= 4;
+      hero.invuln = Math.max(0, hero.invuln - 0.05);
+      updateEnemies(0.05);
+    }
+    assert.ok(hero.hp < 142, '추격 중에도 여러 차례 공격해야 합니다.');
+    assert.ok(mobs[0].attackAnim >= 0);
+  `);
+});
+
+test('방어력 강화는 피해를 줄이고 체력 강화는 최대·현재 체력을 늘린다', async () => {
+  const run = await runtime();
+  run(`
+    state = createInitialState(); state.job = 'warrior'; state.gold = 10000;
+    hero.hp = 150; hero.invuln = 0; state.defenseLevel = 50;
+    takeHeroDamage(30);
+    assert.equal(hero.hp, 135);
+    const initialMaxHp = getAttackStats().maxHp;
+    document.getElementById('hpBtn').handlers.click();
+    assert.equal(getAttackStats().maxHp, initialMaxHp + 15);
+    assert.equal(hero.hp, 150);
+    state.gold = 1e20;
+    document.getElementById('defenseBtn').handlers.click();
+    assert.equal(getAttackStats().defense, 102);
+  `);
+});

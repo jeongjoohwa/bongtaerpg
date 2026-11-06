@@ -6,7 +6,7 @@ import { isInsideField, constrainToField } from './field-shape.js';
 import { getThreatLevel, createEnemyStats } from './encounters.js';
 import { SLAM, updateSlam } from './boss-attacks.js';
 import { projectGround, unprojectGround, getFieldCamera, createScenery, drawGround, drawScenery, drawActor } from './world-view.js';
-import { getRangedMovement, rollAttackDamage, evadesAttack } from './combat.js';
+import { getRangedMovement, rollAttackDamage, evadesAttack, calculateIncomingDamage } from './combat.js';
 import { JOBS, POTION_CONFIG, WORLD_BOSS_DATA, EQUIPMENT_SLOTS } from './data.js';
 import { createInitialState, getStatSnapshot, loadState, saveState, resetSave, getRealCost } from './state.js';
 
@@ -50,7 +50,7 @@ const ui = {
   spdBtn: document.getElementById('spdBtn'),
   atkCost: document.getElementById('atkCost'),
   spdCost: document.getElementById('spdCost'),
-  agilityBtn: document.getElementById('agilityBtn')
+  hpBtn: document.getElementById('hpBtn')
 };
 
 const worldConfig = {
@@ -427,10 +427,12 @@ function updatePlayer(dt) {
 
 function takeHeroDamage(damage) {
   if (hero.invuln > 0 || hero.hp <= 0) return;
-  if (evadesAttack(getAttackStats())) {
+  const stats = getAttackStats();
+  if (evadesAttack(stats)) {
     particles.push({ x: hero.x, y: hero.y - 28, text: '회피!', age: 0, color: '#b6eaff' });
     return;
   }
+  damage = calculateIncomingDamage(damage, stats.defense);
   hero.hp = Math.max(0, hero.hp - damage);
   hero.invuln = 0.35;
   hero.lastDamage = damage;
@@ -440,6 +442,7 @@ function takeHeroDamage(damage) {
 function updateEnemies(dt) {
   for (const mob of [...mobs]) {
     mob.flash = Math.max(0, mob.flash - dt);
+    mob.attackAnim = Math.max(0, (mob.attackAnim || 0) - dt);
     mob.attackTimer -= dt;
     const dx = hero.x - mob.x;
     const dy = hero.y - mob.y;
@@ -456,7 +459,10 @@ function updateEnemies(dt) {
           mob.y = Math.max(70, Math.min(bossBattle.height - 70, mob.y));
         }
       }
-    } else if (mob.attackTimer <= 0) {
+    }
+    const distanceAfterMoving = Math.hypot(hero.x - mob.x, hero.y - mob.y);
+    if (distanceAfterMoving <= attackDistance + 0.01 && mob.attackTimer <= 0) {
+      mob.attackAnim = 0.25;
       mob.attackTimer = mob.worldBoss ? WORLD_BOSS_DATA.attackInterval : mob.boss ? 1.2 : 1.8;
       if (mob.type === 'ranged') {
         projectiles.push({ x: mob.x, y: mob.y, vx: dx / dist * 170, vy: dy / dist * 170,
@@ -975,18 +981,19 @@ function updateUi() {
       <div><dt>공격 속도</dt><dd>×${stats.speed.toFixed(2)}</dd></div>
       <div><dt>치명타 확률</dt><dd>${Math.round(stats.critChance * 100)}%</dd></div>
       <div><dt>치명타 피해</dt><dd>${Math.round(stats.critDamage * 100)}%</dd></div>
-      <div><dt>민첩성 · 회피율</dt><dd>${Math.round(stats.evade * 100)}%</dd></div>
-      <div><dt>이동 속도</dt><dd>${stats.move}</dd></div>
+      <div><dt>회피율</dt><dd>${Math.round(stats.evade * 100)}%</dd></div>
+      <div><dt>민첩성 · 이동 속도</dt><dd>${stats.move}</dd></div>
+      <div><dt>방어력</dt><dd>${stats.defense}</dd></div>
       <div><dt>최대 체력</dt><dd>${stats.maxHp}</dd></div>
     </dl>` : '직업 미선택';
 
   ui.atkCost.textContent = getRealCost('attackLevel', state.attackLevel);
   ui.spdCost.textContent = getRealCost('speedLevel', state.speedLevel);
 
-  for (const [id, key] of [['critChance', 'critChanceLevel'], ['critDamage', 'critDamageLevel'], ['agility', 'agilityLevel']]) {
+  for (const [id, key] of [['hp', 'hpLevel'], ['defense', 'defenseLevel'], ['critChance', 'critChanceLevel'], ['critDamage', 'critDamageLevel'], ['evasion', 'evasionLevel'], ['agility', 'agilityLevel']]) {
     const cost = getRealCost(key, state[key]);
     document.getElementById(`${id}Cost`).textContent = formatNumber(cost);
-    document.getElementById(`${id}Btn`).disabled = !state.job || state.gold < cost || (key === 'critChanceLevel' && stats.critChance >= 0.75);
+    document.getElementById(`${id}Btn`).disabled = !state.job || state.gold < cost || ((key === 'critChanceLevel' && stats.critChance >= 0.75) || (key === 'evasionLevel' && stats.evade >= 0.75));
   }
   ui.atkBtn.disabled = !state.job || state.gold < getRealCost('attackLevel', state.attackLevel);
   ui.spdBtn.disabled = !state.job || state.gold < getRealCost('speedLevel', state.speedLevel);
@@ -1000,6 +1007,7 @@ function updateUi() {
 }
 
 function applyUpgrade(kind) {
+  if (kind === 'evasionLevel' && getAttackStats().evade >= 0.75) return;
   if (kind === 'critChanceLevel' && getAttackStats().critChance >= 0.75) return;
   const cost = getRealCost(kind, state[kind]);
   if (!state.job || state.gold < cost) {
@@ -1008,6 +1016,7 @@ function applyUpgrade(kind) {
   }
   state.gold -= cost;
   state[kind] += 1;
+  if (kind === 'hpLevel' && hero.hp > 0) hero.hp = Math.min(getAttackStats().maxHp, hero.hp + 15);
   saveState(state);
   logToBox('성장 강화가 적용되었습니다.');
   updateUi();
@@ -1015,7 +1024,7 @@ function applyUpgrade(kind) {
 
 ui.atkBtn.addEventListener('click', () => applyUpgrade('attackLevel'));
 ui.spdBtn.addEventListener('click', () => applyUpgrade('speedLevel'));
-for (const key of ['critChance', 'critDamage', 'agility']) {
+for (const key of ['hp', 'defense', 'critChance', 'critDamage', 'evasion', 'agility']) {
   document.getElementById(`${key}Btn`).addEventListener('click', () => applyUpgrade(`${key}Level`));
 }
 

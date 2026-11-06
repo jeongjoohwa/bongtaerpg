@@ -43,10 +43,16 @@ test('loadState는 기존 저장을 복원할 수 있다', () => {
     const state = createInitialState();
     state.job = 'mage';
     state.gold = 500;
+    state.agilityLevel = 7;
+    delete state.growthVersion;
+    delete state.evasionLevel;
     globalThis.localStorage.setItem('starlight_idle_v04', JSON.stringify(state));
     const loaded = loadState();
     assert.equal(loaded.job, 'mage');
     assert.equal(loaded.gold, 500);
+    assert.equal(loaded.evasionLevel, 7);
+    assert.equal(loaded.agilityLevel, 0);
+    assert.equal(loaded.growthVersion, 2);
   } finally {
     globalThis.localStorage = originalStorage;
   }
@@ -213,10 +219,10 @@ test('골드 부족과 최대 강화에서는 비용이나 무기를 변경하�
 
 import { rollAttackDamage } from './combat.js';
 
-test('치명타 성장은 피해에, 민첩성은 회피율에 적용된다', () => {
+test('치명타 성장은 피해에, 회피율 성장은 회피 판정에 적용된다', () => {
   const state = createInitialState(); state.job = 'archer';
   const before = getStatSnapshot(state);
-  state.critChanceLevel = 10; state.critDamageLevel = 5; state.agilityLevel = 4;
+  state.critChanceLevel = 10; state.critDamageLevel = 5; state.evasionLevel = 4;
   const stats = getStatSnapshot(state);
   assert.ok(Math.abs(stats.critChance - 0.15) < 1e-10);
   assert.equal(stats.critDamage, 2);
@@ -232,15 +238,15 @@ test('치명타 성장은 피해에, 민첩성은 회피율에 적용된다', ()
 
 import { evadesAttack } from './combat.js';
 
-test('민첩성과 장비 회피율이 합산되고 근접·원거리·보스 공격에 쓸 회피를 판정한다', () => {
+test('성장과 장비 회피율이 합산되고 근접·원거리·보스 공격에 쓸 회피를 판정한다', () => {
   const state = createInitialState();
-  state.agilityLevel = 10;
+  state.evasionLevel = 10;
   state.equipment.boots = { type: 'boots', stats: { evade: 0.05 } };
   const stats = getStatSnapshot(state);
   assert.ok(Math.abs(stats.evade - 0.15) < 1e-10);
   assert.equal(evadesAttack(stats, 0.1), true);
   assert.equal(evadesAttack(stats, 0.2), false);
-  state.agilityLevel = 100;
+  state.evasionLevel = 100;
   assert.equal(getStatSnapshot(state).evade, 0.75);
 });
 
@@ -317,4 +323,22 @@ test('숲 투명도는 다른 캐릭터나 UI 그리기에 남지 않는다', ()
   drawScenery(ctx, { x: 120, y: 120, type: 'tree' }, { x: 100, y: 100 });
   assert.ok(observed.every(alpha => alpha === 0.22));
   assert.equal(ctx.globalAlpha, 1);
+});
+
+
+import { calculateIncomingDamage } from './combat.js';
+
+test('민첩성과 회피율은 독립적이며 방어력이 실제 피해를 감소시킨다', () => {
+  const state = createInitialState();
+  const initial = getStatSnapshot(state);
+  state.agilityLevel = 5;
+  assert.equal(getStatSnapshot(state).move, initial.move + 15);
+  assert.equal(getStatSnapshot(state).evade, initial.evade);
+  state.evasionLevel = 10; state.defenseLevel = 25;
+  const stats = getStatSnapshot(state);
+  assert.equal(stats.evade, 0.1);
+  assert.equal(stats.defense, 50);
+  assert.equal(calculateIncomingDamage(30, stats.defense), 20);
+  assert.equal(calculateIncomingDamage(8, 0), 8);
+  assert.equal(calculateIncomingDamage(1, 10000), 1);
 });
