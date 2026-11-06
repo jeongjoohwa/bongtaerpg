@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>이세계 용사</title>
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
+    <main class="game-shell">
+      <header class="topbar">
+        <div class="header-actions">
+          <button id="settingsBtn" class="btn settings-button" aria-label="설정 열기" aria-haspopup="dialog" aria-controls="settingsScreen"><span aria-hidden="true">⚙</span></button>
+        </div>
+      </header>
+
+      <div class="hud-grid">
+        <div class="stat-box"><span>누적 사냥 시간</span><strong id="huntTimeLabel">0분 00초</strong></div>
+        <div class="stat-box"><span>골드</span><strong id="goldLabel">0 G</strong></div>
+        <div class="stat-box"><span>몬스터 위협도</span><strong id="threatLabel">Lv. 1</strong></div>
+      </div>
+
+      <div class="play-area">
+        <section class="panel game-panel">
+          <canvas id="gameCanvas" width="640" height="384" aria-label="게임 화면"></canvas>
+          <div id="mapName" class="map-name">별빛 숲</div>
+          <button id="bossLeaveBtn" class="btn alt" hidden>보스 도전 나가기</button>
+          <div class="player-hud">
+          <div class="hp-row">
+            <div><strong id="heroName">용사</strong></div>
+            <div id="hpText">HP 0 / 0</div>
+          </div>
+          <div class="bar"><i id="hpBar"></i></div>
+          </div>
+        </section>
+
+        <aside class="panel side-panel">
+          <button id="growthToggle" class="panel-title growth-toggle" type="button" aria-expanded="true" aria-controls="growthContent">캐릭터 성장 <span aria-hidden="true">▾</span></button>
+          <div id="growthContent">
+
+          <div class="upgrade-row">
+            <div>
+              <strong>기본 공격력</strong>
+              <small>비용 <span id="atkCost">15</span> G</small>
+            </div>
+            <button id="atkBtn" class="btn">강화</button>
+          </div>
+          <div class="upgrade-row">
+            <div>
+              <strong>공격 속도</strong>
+              <small>비용 <span id="spdCost">35</span> G</small>
+            </div>
+            <button id="spdBtn" class="btn">강화</button>
+          </div>
+          <div class="upgrade-row">
+            <div><strong>치명타 확률</strong><small>비용 <span id="critChanceCost">50</span> G</small></div>
+            <button id="critChanceBtn" class="btn">강화</button>
+          </div>
+          <div class="upgrade-row">
+            <div><strong>치명타 피해</strong><small>비용 <span id="critDamageCost">50</span> G</small></div>
+            <button id="critDamageBtn" class="btn">강화</button>
+          </div>
+          <div class="upgrade-row">
+            <div><strong>민첩성 (회피율)</strong><small>비용 <span id="agilityCost">30</span> G</small></div>
+            <button id="agilityBtn" class="btn">강화</button>
+          </div>
+
+          <details class="stats-dropdown">
+            <summary>스탯 보기</summary>
+            <div id="buildInfo" class="muted-box">직업 미선택</div>
+          </details>
+
+          <div class="divider"></div>
+
+          <div class="quick-actions">
+            <button id="innBtn" class="btn alt">길드</button>
+            <button id="bossBtn" class="btn alt">보스</button>
+          </div>
+
+          </div>
+        </aside>
+      </div>
+    </main>
+
+    <div id="settingsScreen" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+      <div class="modal-card settings-card">
+        <button id="settingsCloseBtn" class="modal-close" aria-label="설정 닫기">×</button>
+        <h2 id="settingsTitle">설정</h2>
+        <div class="settings-actions">
+          <button id="saveBtn" class="btn">저장</button>
+          <button id="resetBtn" class="btn danger">새 게임</button>
+        </div>
+        <div id="saveStatus" class="save-status" role="status">자동 저장 준비 중</div>
+      </div>
+    </div>
+
+    <div id="jobSelection" class="modal-overlay hidden">
+      <form id="nicknameForm" class="modal-card character-creation">
+        <h2 id="creationTitle" tabindex="-1">낯선 세계로</h2>
+        <div id="prologueScene" class="prologue-scene" data-scene="accident" aria-hidden="true">
+          <div class="story-moon"></div><div class="story-hills"></div><div class="story-road"></div>
+          <div class="story-truck"><span></span></div>
+          <div class="story-gate"><span></span></div><div class="story-guard"><span></span></div>
+          <span id="storySceneCaption" class="story-scene-caption">어느 늦은 밤, 횡단보도 앞</span>
+        </div>
+        <div class="story-dialogue" aria-live="polite">
+          <strong id="storySpeaker">나</strong>
+          <p id="storyDialogue">평범한 하루가 끝나는 줄 알았다.</p>
+        </div>
+        <div id="introStep">
+          <button id="storyNextBtn" type="button" class="btn creation-start">다음</button>
+          <button id="storySkipBtn" type="button" class="story-skip">직업 선택으로 건너뛰기</button>
+        </div>
+        <fieldset id="jobStep" class="job-options" hidden>
+          <legend>직업 선택</legend>
+          <div class="class-grid">
+            <button type="button" class="job-card" data-job="warrior" aria-pressed="false">
+              <span class="emoji" aria-hidden="true">🛡️</span><strong>전사</strong><small>근접 공격 · 높은 체력</small>
+            </button>
+            <button type="button" class="job-card" data-job="mage" aria-pressed="false">
+              <span class="emoji" aria-hidden="true">🔮</span><strong>마법사</strong><small>원거리 마법 · 높은 공격력</small>
+            </button>
+            <button type="button" class="job-card" data-job="archer" aria-pressed="false">
+              <span class="emoji" aria-hidden="true">🏹</span><strong>궁수</strong><small>원거리 사격 · 빠른 공격</small>
+            </button>
+          </div>
+        </fieldset>
+        <div id="nicknameStep" hidden>
+          <p id="selectedJobLabel" class="muted"></p>
+          <label for="nicknameInput">닉네임</label>
+          <input id="nicknameInput" name="nickname" type="text" minlength="2" maxlength="12" required autocomplete="off" placeholder="닉네임 2~12자" aria-describedby="nicknameError" disabled />
+          <p id="nicknameError" role="status"></p>
+          <button type="submit" class="btn creation-start">이름 알려주기</button>
+          <button type="button" id="creationBackBtn" class="btn alt creation-start">문지기의 이야기 다시 듣기</button>
+        </div>
+      </form>
+    </div>
+
+    <div id="innScreen" class="modal-overlay hidden">
+      <div class="modal-card inn-card">
+        <div class="inn-header">
+          <h2>별빛 길드</h2>
+          <div id="innTimer">휴식 타이머: 00:00</div>
+        </div>
+        <p id="guildRegistrationHint" class="guild-registration-hint" role="status" hidden>문지기의 안내로 길드에 도착했습니다.<br>길드 접수원을 눌러 직업을 등록하세요.</p>
+        <div class="inn-grid">
+          <div class="inn-main">
+            <div class="summary-box">
+              <div>캐릭터: <strong id="innHeroName">-</strong></div>
+              <div id="innHpText">HP 0 / 0</div>
+            </div>
+            <div class="inn-map" aria-label="사선으로 내려다보는 별빛 길드 내부 지도">
+              <svg class="inn-room-art" viewBox="50 0 500 350" aria-label="2.5D 길드 내부"><defs><linearGradient id="innLight" x1="0" y1="1" x2="0" y2="0"><stop stop-color="#ffe6a5" stop-opacity=".5" /><stop offset="1" stop-color="#ffe6a5" stop-opacity="0" /></linearGradient></defs><polygon points="60,210 300,330 300,342 60,222" fill="#49392c" stroke="#493c32" stroke-width="1.5" /><polygon points="540,210 300,330 300,342 540,222" fill="#372e29" stroke="#493c32" stroke-width="1.5" /><polygon points="300,90 324,102 276,126 252,114" fill="#826044" stroke="#493c32" stroke-width="1.5" /><polygon points="252,114 276,126 228,150 204,138" fill="#916c49" stroke="#493c32" stroke-width="1.5" /><polygon points="204,138 228,150 180,174 156,162" fill="#826044" stroke="#493c32" stroke-width="1.5" /><polygon points="156,162 180,174 132,198 108,186" fill="#916c49" stroke="#493c32" stroke-width="1.5" /><polygon points="108,186 132,198 84,222 60,210" fill="#826044" stroke="#493c32" stroke-width="1.5" /><polygon points="324,102 348,114 300,138 276,126" fill="#916c49" stroke="#493c32" stroke-width="1.5" /><polygon points="276,126 300,138 252,162 228,150" fill="#826044" stroke="#493c32" stroke-width="1.5" /><polygon points="228,150 252,162 204,186 180,174" fill="#916c49" stroke="#493c32" stroke-width="1.5" /><polygon points="180,174 204,186 156,210 132,198" fill="#826044" stroke="#493c32" stroke-width="1.5" /><polygon points="132,198 156,210 108,234 84,222" fill="#916c49" stroke="#493c32" stroke-width="1.5" /><polygon points="348,114 372,126 324,150 300,138" fill="#826044" stroke="#493c32" stroke-width="1.5" /><polygon points="300,138 324,150 276,174 252,162" fill="#916c49" stroke="#493c32" stroke-width="1.5" /><polygon points="252,162 276,174 228,198 204,186" fill="#826044" stroke="#493c32" stroke-width="1.5" /><polygon points="204,186 228,198 180,222 156,210" fill="#916c49" stroke="#493c32" stroke-width="1.5" /><polygon points="156,210 180,222 132,246 108,234" fill="#826044" stroke="#493c32" stroke-width="1.5" /><polygon points="372,126 396,138 348,162 324,150" fill="#916c49" stroke="#493c32" stroke-width="1.5" /><polygon points="324,150 348,162 300,186 276,174" fill="#826044" stroke="#493c32" stroke-width="1.5" /><polygon points="276,174 300,186 252,210 228,198" fill="#916c49" stroke="#493c32" stroke-width="1.5" /><polygon points="228,198 252,210 204,234 180,222" fill="#826044" stroke="#493c32" stroke-width="1.5" /><polygon points="180,222 204,234 156,258 132,246" fill="#916c49" stroke="#493c32" stroke-width="1.5" /><polygon points="396,138 420,150 372,174 348,162" fill="#826044" stroke="#493c32" stroke-width="1.5" /><polygon points="348,162 372,174 324,198 300,186" fill="#916c49" stroke="#493c32" stroke-width="1.5" /><polygon points="300,186 324,198 276,222 252,210" fill="#826044" stroke="#493c32" stroke-width="1.5" /><polygon points="252,210 276,222 228,246 204,234" fill="#916c49" stroke="#493c32" stroke-width="1.5" /><polygon points="204,234 228,246 180,270 156,258" fill="#826044" stroke="#493c32" stroke-width="1.5" /><polygon points="420,150 444,162 396,186 372,174" fill="#916c49" stroke="#493c32" stroke-width="1.5" /><polygon points="372,174 396,186 348,210 324,198" fill="#826044" stroke="#493c32" stroke-width="1.5" /><polygon points="324,198 348,210 300,234 276,222" fill="#916c49" stroke="#493c32" stroke-width="1.5" /><polygon points="276,222 300,234 252,258 228,246" fill="#826044" stroke="#493c32" stroke-width="1.5" /><polygon points="228,246 252,258 204,282 180,270" fill="#916c49" stroke="#493c32" stroke-width="1.5" /><polygon points="444,162 468,174 420,198 396,186" fill="#826044" stroke="#493c32" stroke-width="1.5" /><polygon points="396,186 420,198 372,222 348,210" fill="#916c49" stroke="#493c32" stroke-width="1.5" /><polygon points="348,210 372,222 324,246 300,234" fill="#826044" stroke="#493c32" stroke-width="1.5" /><polygon points="300,234 324,246 276,270 252,258" fill="#916c49" stroke="#493c32" stroke-width="1.5" /><polygon points="252,258 276,270 228,294 204,282" fill="#826044" stroke="#493c32" stroke-width="1.5" /><polygon points="468,174 492,186 444,210 420,198" fill="#916c49" stroke="#493c32" stroke-width="1.5" /><polygon points="420,198 444,210 396,234 372,222" fill="#826044" stroke="#493c32" stroke-width="1.5" /><polygon points="372,222 396,234 348,258 324,246" fill="#916c49" stroke="#493c32" stroke-width="1.5" /><polygon points="324,246 348,258 300,282 276,270" fill="#826044" stroke="#493c32" stroke-width="1.5" /><polygon points="276,270 300,282 252,306 228,294" fill="#916c49" stroke="#493c32" stroke-width="1.5" /><polygon points="492,186 516,198 468,222 444,210" fill="#826044" stroke="#493c32" stroke-width="1.5" /><polygon points="444,210 468,222 420,246 396,234" fill="#916c49" stroke="#493c32" stroke-width="1.5" /><polygon points="396,234 420,246 372,270 348,258" fill="#826044" stroke="#493c32" stroke-width="1.5" /><polygon points="348,258 372,270 324,294 300,282" fill="#916c49" stroke="#493c32" stroke-width="1.5" /><polygon points="300,282 324,294 276,318 252,306" fill="#826044" stroke="#493c32" stroke-width="1.5" /><polygon points="516,198 540,210 492,234 468,222" fill="#916c49" stroke="#493c32" stroke-width="1.5" /><polygon points="468,222 492,234 444,258 420,246" fill="#826044" stroke="#493c32" stroke-width="1.5" /><polygon points="420,246 444,258 396,282 372,270" fill="#916c49" stroke="#493c32" stroke-width="1.5" /><polygon points="372,270 396,282 348,306 324,294" fill="#826044" stroke="#493c32" stroke-width="1.5" /><polygon points="324,294 348,306 300,330 276,318" fill="#916c49" stroke="#493c32" stroke-width="1.5" /><polygon points="300,20 540,140 540,210 300,90" fill="#61564c" stroke="#493c32" stroke-width="1.5" /><polygon points="300,20 60,140 60,210 300,90" fill="#81705d" stroke="#493c32" stroke-width="1.5" /><path d="M300.0,90.0 L540.0,210.0" stroke="#493c32" stroke-width="2" /><path d="M300.0,90.0 L60.0,210.0" stroke="#493c32" stroke-width="2" /><path d="M300.0,67.0 L540.0,187.0" stroke="#493c32" stroke-width="2" /><path d="M300.0,67.0 L60.0,187.0" stroke="#493c32" stroke-width="2" /><path d="M300.0,44.0 L540.0,164.0" stroke="#493c32" stroke-width="2" /><path d="M300.0,44.0 L60.0,164.0" stroke="#493c32" stroke-width="2" /><path d="M300.0,20.0 L540.0,140.0" stroke="#493c32" stroke-width="2" /><path d="M300.0,20.0 L60.0,140.0" stroke="#493c32" stroke-width="2" /><polygon points="168.0,254.0 224.0,282.0 312.0,254.0 224.0,210.0" fill="url(#innLight)" /><g class="room-npc" id="innRestBtn" role="button" tabindex="0" aria-label="길드 접수원: 미션 선택" aria-describedby="innHostTip"><rect x="243.0" y="99.0" width="66" height="72" fill="transparent" /><ellipse cx="276.0" cy="151.0" rx="14" ry="5" fill="#29271e" opacity=".4" /><g class="room-npc-sprite" aria-hidden="true"><rect x="268" y="138" width="6" height="12" fill="#2b2e34" /><rect x="278" y="138" width="6" height="12" fill="#2b2e34" /><rect x="266" y="118" width="20" height="22" fill="#d4c3a2" /><rect x="281" y="121" width="5" height="17" fill="#555044" /><rect x="269" y="105" width="14" height="14" fill="#e4b58d" /><rect x="267" y="102" width="18" height="6" fill="#594132" /></g><text class="room-label" x="276.0" y="93" text-anchor="middle">길드 접수원</text><g class="room-bubble" id="innHostTip" role="tooltip" transform="translate(0 -28)"><rect x="219" y="68" width="114" height="25" fill="#24313b" /><path d="M271.0,93.0 L276.0,99.0 L281.0,93.0" fill="#e2c58a" /><text x="276.0" y="85.0" text-anchor="middle">미션 선택</text></g></g><polygon points="410.4,108.8 482.4,144.8 463.2,154.4 391.2,118.4" fill="#a88455" stroke="#493c32" stroke-width="1.5" /><polygon points="482.4,144.8 463.2,154.4 463.2,200.4 482.4,190.8" fill="#493a2c" stroke="#493c32" stroke-width="1.5" /><polygon points="391.2,118.4 463.2,154.4 463.2,200.4 391.2,164.4" fill="#64492f" stroke="#493c32" stroke-width="1.5" /><g transform="translate(0 -46)"><polygon points="413.6,147.2 420.8,150.8 413.6,154.4 406.4,150.8" fill="#d7b4d9" stroke="#493c32" stroke-width="1.5" /><polygon points="420.8,150.8 413.6,154.4 413.6,168.4 420.8,164.8" fill="#674876" stroke="#493c32" stroke-width="1.5" /><polygon points="406.4,150.8 413.6,154.4 413.6,168.4 406.4,164.8" fill="#9069a1" stroke="#493c32" stroke-width="1.5" /><polygon points="428,154.4 435.2,158 428,161.6 420.8,158" fill="#d7b4d9" stroke="#493c32" stroke-width="1.5" /><polygon points="435.2,158 428,161.6 428,175.6 435.2,172" fill="#674876" stroke="#493c32" stroke-width="1.5" /><polygon points="420.8,158 428,161.6 428,175.6 420.8,172" fill="#9069a1" stroke="#493c32" stroke-width="1.5" /><polygon points="442.4,161.6 449.6,165.2 442.4,168.8 435.2,165.2" fill="#d7b4d9" stroke="#493c32" stroke-width="1.5" /><polygon points="449.6,165.2 442.4,168.8 442.4,182.8 449.6,179.2" fill="#674876" stroke="#493c32" stroke-width="1.5" /><polygon points="435.2,165.2 442.4,168.8 442.4,182.8 435.2,179.2" fill="#9069a1" stroke="#493c32" stroke-width="1.5" /><polygon points="456.8,168.8 464,172.4 456.8,176 449.6,172.4" fill="#d7b4d9" stroke="#493c32" stroke-width="1.5" /><polygon points="464,172.4 456.8,176 456.8,190 464,186.4" fill="#674876" stroke="#493c32" stroke-width="1.5" /><polygon points="449.6,172.4 456.8,176 456.8,190 449.6,186.4" fill="#9069a1" stroke="#493c32" stroke-width="1.5" /><polygon points="471.2,176 478.4,179.6 471.2,183.2 464,179.6" fill="#d7b4d9" stroke="#493c32" stroke-width="1.5" /><polygon points="478.4,179.6 471.2,183.2 471.2,197.2 478.4,193.6" fill="#674876" stroke="#493c32" stroke-width="1.5" /><polygon points="464,179.6 471.2,183.2 471.2,197.2 464,193.6" fill="#9069a1" stroke="#493c32" stroke-width="1.5" /></g><polygon points="252,129 328,167 305.6,178.2 229.6,140.2" fill="#bf975e" stroke="#493c32" stroke-width="1.5" /><polygon points="328,167 305.6,178.2 305.6,207.2 328,196" fill="#60452f" stroke="#493c32" stroke-width="1.5" /><polygon points="229.6,140.2 305.6,178.2 305.6,207.2 229.6,169.2" fill="#835934" stroke="#493c32" stroke-width="1.5" /><polygon points="176,156 224,180 152,216 104,192" fill="#718ba0" stroke="#493c32" stroke-width="1.5" /><polygon points="224,180 152,216 152,232 224,196" fill="#343c46" stroke="#493c32" stroke-width="1.5" /><polygon points="104,192 152,216 152,232 104,208" fill="#4b4b53" stroke="#493c32" stroke-width="1.5" /><polygon points="175.2,156.8 218.4,178.4 203.2,186 160,164.4" fill="#ddd2b6" stroke="#493c32" stroke-width="1.5" /><g class="room-npc" id="innShopBtn" role="button" tabindex="0" aria-label="상점 주인: 포션 상점" aria-describedby="innShopTip"><rect x="299.0" y="167.0" width="66" height="72" fill="transparent" /><ellipse cx="332.0" cy="219.0" rx="14" ry="5" fill="#29271e" opacity=".4" /><g class="room-npc-sprite" aria-hidden="true"><rect x="324" y="206" width="6" height="12" fill="#2b2e34" /><rect x="334" y="206" width="6" height="12" fill="#2b2e34" /><rect x="322" y="186" width="20" height="22" fill="#658b68" /><rect x="337" y="189" width="5" height="17" fill="#555044" /><rect x="325" y="173" width="14" height="14" fill="#e4b58d" /><rect x="323" y="170" width="18" height="6" fill="#594132" /></g><text class="room-label" x="332.0" y="161" text-anchor="middle">상점 주인</text><g class="room-bubble" id="innShopTip" role="tooltip" transform="translate(0 -28)"><rect x="275" y="136" width="114" height="25" fill="#24313b" /><path d="M327.0,161.0 L332.0,167.0 L337.0,161.0" fill="#e2c58a" /><text x="332.0" y="153.0" text-anchor="middle">포션 상점</text></g></g><polygon points="420,170 461.6,190.8 420,211.6 378.4,190.8" fill="#8c8474" stroke="#493c32" stroke-width="1.5" /><polygon points="461.6,190.8 420,211.6 420,251.6 461.6,230.8" fill="#3c383a" stroke="#493c32" stroke-width="1.5" /><polygon points="378.4,190.8 420,211.6 420,251.6 378.4,230.8" fill="#4b4543" stroke="#493c32" stroke-width="1.5" /><polygon points="385.6,229.2 408,240.4 408,216.4 385.6,205.2" fill="#f5a34d" stroke="#493c32" stroke-width="1.5" /><g id="guildHeroBtn" class="room-npc" role="button" tabindex="0" aria-label="내 캐릭터: 인벤토리" aria-describedby="guildHeroTip"><rect x="210" y="182" width="60" height="65" fill="transparent" /><g class="room-npc-sprite"><ellipse cx="240.0" cy="237.0" rx="14" ry="5" fill="#29271e" opacity=".4" /><rect x="232" y="224" width="6" height="12" fill="#2b2e34" /><rect x="242" y="224" width="6" height="12" fill="#2b2e34" /><rect x="230" y="204" width="20" height="22" fill="#76c6fa" /><rect x="245" y="207" width="5" height="17" fill="#555044" /><rect x="233" y="191" width="14" height="14" fill="#e4b58d" /><rect x="231" y="188" width="18" height="6" fill="#594132" /></g><text id="guildHeroName" class="room-label" x="240" y="179" text-anchor="middle">내 캐릭터</text><g class="room-bubble"><rect x="190" y="138" width="100" height="25" fill="#24313b" /><text id="guildHeroTip" role="tooltip" x="240" y="155" text-anchor="middle">인벤토리</text></g></g><polygon points="340,232 368,246 348.8,255.6 320.8,241.6" fill="#a1a2a1" stroke="#493c32" stroke-width="1.5" /><polygon points="368,246 348.8,255.6 348.8,277.6 368,268" fill="#454d54" stroke="#493c32" stroke-width="1.5" /><polygon points="320.8,241.6 348.8,255.6 348.8,277.6 320.8,263.6" fill="#686d70" stroke="#493c32" stroke-width="1.5" /><g class="room-npc" id="innEquipBtn" role="button" tabindex="0" aria-label="대장장이: 무기 강화" aria-describedby="innSmithTip"><rect x="259.0" y="219.0" width="66" height="72" fill="transparent" /><ellipse cx="292.0" cy="271.0" rx="14" ry="5" fill="#29271e" opacity=".4" /><g class="room-npc-sprite" aria-hidden="true"><rect x="284" y="258" width="6" height="12" fill="#2b2e34" /><rect x="294" y="258" width="6" height="12" fill="#2b2e34" /><rect x="282" y="238" width="20" height="22" fill="#765044" /><rect x="297" y="241" width="5" height="17" fill="#555044" /><rect x="285" y="225" width="14" height="14" fill="#e4b58d" /><rect x="283" y="222" width="18" height="6" fill="#594132" /></g><text class="room-label" x="292.0" y="213" text-anchor="middle">대장장이</text><g class="room-bubble" id="innSmithTip" role="tooltip" transform="translate(0 -28)"><rect x="235" y="188" width="114" height="25" fill="#24313b" /><path d="M287.0,213.0 L292.0,219.0 L297.0,213.0" fill="#e2c58a" /><text x="292.0" y="205.0" text-anchor="middle">무기 강화</text></g></g><g id="innDoorBtn" class="room-door" tabindex="0" role="button" aria-label="입구로 나가 사냥터로 돌아가기" aria-describedby="innDoorTip"><polygon points="176,251 232,279 216,287 160,259" fill="#f4d89a" stroke="#493c32" stroke-width="1.5" /><text x="196.0" y="272.0" text-anchor="middle">입구</text><g class="room-bubble"><rect x="126.0" y="217.0" width="140" height="25" fill="#24313b" /><path d="M191.0,242.0 L196.0,248.0 L201.0,242.0" fill="#e2c58a" /><text id="innDoorTip" role="tooltip" x="196.0" y="234.0" text-anchor="middle">사냥터로 돌아가기</text></g></g></svg>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="missionScreen" class="modal-overlay hidden">
+      <div class="modal-card wide-card">
+        <button class="modal-close" data-close="missionScreen" aria-label="미션 창 닫기">×</button>
+        <h2>길드 접수원 · 토벌 의뢰</h2>
+        <p id="missionMessage" role="status"></p>
+        <div id="missionList" class="equipment-list"></div>
+      </div>
+    </div>
+
+    <div id="equipmentScreen" class="modal-overlay hidden">
+      <div class="modal-card wide-card">
+        <button class="modal-close" data-close="equipmentScreen" aria-label="인벤토리 또는 대장장이 창 닫기">×</button>
+        <h2 id="equipmentTitle">인벤토리</h2>
+        <div id="equipmentSummary" class="summary-box"></div>
+        <p id="equipmentMessage" role="status"></p>
+        <div id="equipmentList" class="equipment-list"></div>
+      </div>
+    </div>
+
+    <div id="shopScreen" class="modal-overlay hidden">
+      <div class="modal-card wide-card">
+        <button class="modal-close" data-close="shopScreen" aria-label="상점 닫기">×</button>
+        <h2>길드 상점</h2>
+        <div class="shop-wallet">보유 골드: <strong id="shopGoldLabel" role="status">0 G</strong></div>
+        <div id="shopList" class="shop-list"></div>
+      </div>
+    </div>
+
+    <div id="bossScreen" class="modal-overlay hidden">
+      <div class="modal-card wide-card">
+        <button class="modal-close" data-close="bossScreen" aria-label="보스 닫기">×</button>
+        <h2 id="bossTitle">레드드래곤 · 공유 월드 보스</h2>
+        <p id="bossConnection" class="muted" role="status">공유 서버에 연결 중…</p>
+        <div class="boss-summary">
+          <div class="boss-bar-wrap">
+            <div class="bar boss-bar"><i id="bossHpBar"></i></div>
+          </div>
+          <div id="bossStats">보스 HP 0 / 0</div>
+        </div>
+        <div class="boss-actions">
+          <button id="bossChallengeBtn" class="btn">보스 도전</button>
+          <button id="bossCloseBtn" class="btn alt">닫기</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="missionToast" class="mission-toast" role="status" aria-live="polite" aria-atomic="true">
+      <span class="mission-toast-icon" aria-hidden="true">✓</span>
+      <div><strong>토벌 목표 달성!</strong><div id="missionToastName"></div><small id="missionToastDetail"></small></div>
+    </div>
+
+    <script type="module" src="js/main.js"></script>
+  </body>
+</html>
